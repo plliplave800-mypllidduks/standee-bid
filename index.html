@@ -316,6 +316,12 @@
         .nav-link { color: #555963; transition: color .2s ease; }
         .nav-link:hover { color: #202126; }
         .nav-my-bids { border-bottom: 1px solid #202126; padding: 4px 0; color: #202126; }
+        .register-status { border-bottom: 1px solid #202126; padding: 4px 0; color: #202126; font: inherit; font-weight: 700; letter-spacing: .1em; }
+        .standee-image { width: auto !important; max-width: 100% !important; height: 100% !important; object-fit: contain !important; object-position: center !important; cursor: zoom-in; }
+        .image-preview-hint { margin-top: 10px; font: 700 10px/1 'Space Mono', monospace; letter-spacing: .1em; color: #777A84; text-transform: uppercase; }
+        .image-lightbox { background: rgba(13, 17, 31, .92); }
+        .image-lightbox img { display: block; max-width: min(90vw, 840px); max-height: 82vh; object-fit: contain; }
+        .image-lightbox-close { position: absolute; top: 22px; right: 28px; color: #fff; font-size: 32px; line-height: 1; }
         .hero-intro { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr); align-items: end; gap: 40px; padding: 58px 0 34px; }
         .hero-kicker { font: 700 11px/1 'Space Mono', monospace; letter-spacing: .16em; color: #6E717B; text-transform: uppercase; margin-bottom: 18px; }
         #page-title { max-width: 760px; font-size: clamp(55px, 8.2vw, 108px) !important; line-height: .86; letter-spacing: -.085em; text-transform: uppercase; }
@@ -331,10 +337,10 @@
         .item-topline { display: flex; align-items: baseline; justify-content: space-between; border-bottom: 1px solid #CACCD3; padding-bottom: 11px; margin-bottom: 18px; }
         .item-number { font: 700 13px/1 'Space Mono', monospace; letter-spacing: .12em; }
         .item-status { font-size: 11px; }
-        .card-image-wrap { height: min(34vw, 360px); background: transparent; overflow: visible; display: grid; place-items: end center; position: relative; }
+        .card-image-wrap { height: min(25vw, 280px); background: #FFFFFF; overflow: hidden; display: grid; place-items: center; position: relative; }
         .card-image-wrap::before { content: ""; position: absolute; left: 8%; right: 8%; bottom: 2%; height: 42%; background: #E2E4EA; z-index: -1; }
         .standee-card:nth-child(2) .card-image-wrap::before { background: #EBE1E6; }
-        .card-image-wrap img { width: 100%; height: 100%; object-fit: contain; transition: transform .35s cubic-bezier(.2,.8,.2,1); }
+        .card-image-wrap img { width: auto; max-width: 100%; height: 100%; object-fit: contain; object-position: center; transition: transform .35s cubic-bezier(.2,.8,.2,1); }
         .standee-card:hover .card-image-wrap img { transform: translateY(-5px) rotate(1deg); }
         .card-image-gradient, .price-badge { display: none; }
         .item-copy { padding-top: 20px; }
@@ -364,7 +370,7 @@
         .ended-message strong { display: block; font-size: 14px; letter-spacing: .04em; }
         .ended-message span { display: block; margin-top: 5px; color: #777A84; font-size: 12px; }
         .past-bids-section { padding: 72px 0 82px; border-top: 1px solid #CACCD3; }
-        #past-bids-section, #rules-banner { scroll-margin-top: 24px; }
+        #past-bids-section, #rules-heading { scroll-margin-top: 24px; }
         .past-bids-intro { display: grid; grid-template-columns: minmax(0, .72fr) minmax(260px, 1.28fr); gap: 42px; align-items: end; margin-bottom: 38px; }
         .past-bids-copy { max-width: 420px; color: #676A74; font-size: 14px; line-height: 1.65; }
         .past-bids-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(22px, 4vw, 54px); }
@@ -390,7 +396,7 @@
             .hero-timer { margin-top: 32px; padding: 18px 0 0; border-top: 1px solid #CACCD3; }
             #standee-container { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; padding-top: 20px; margin-bottom: 72px !important; }
             .item-topline { margin-bottom: 10px; }
-            .card-image-wrap { height: 43vw; min-height: 170px; }
+            .card-image-wrap { height: clamp(180px, 52vw, 240px); min-height: 0; }
             .item-copy { padding-top: 12px; }
             .item-heading-row { display: block; }
             .item-name { font-size: clamp(24px, 8vw, 38px); }
@@ -421,7 +427,7 @@
         <nav class="site-nav" aria-label="Primary navigation">
             <a class="wordmark" href="#">MYPlliDduks</a>
             <div class="nav-actions">
-                <a class="nav-link optional" href="#rules-banner">How to Bid</a>
+                <a class="nav-link optional" href="#rules-heading">How to Bid</a>
                 <a class="nav-link" href="#past-bids-section">Past Bids</a>
                 <button onclick="toggleMyBidsModal(true)" class="nav-my-bids">My Bids ↗</button>
             </div>
@@ -493,11 +499,18 @@
         <div id="admin-panel" class="hidden mt-8 rounded-2xl p-5" style="background: var(--bg-surface); border: 1px solid var(--border-subtle);"></div>
     </div>
 
+    <div id="image-lightbox" class="image-lightbox hidden fixed inset-0 z-50 p-6 flex items-center justify-center" role="dialog" aria-modal="true" aria-label="Full standee image">
+        <button type="button" class="image-lightbox-close" onclick="closeImagePreview()" aria-label="Close full image">×</button>
+        <img id="image-lightbox-image" src="" alt="">
+    </div>
+
+
     <!-- Login Modal -->
     <div id="login-modal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
         <div class="modal-box rounded-2xl p-6 max-w-sm w-full shadow-xl">
             <h3 class="font-display text-xl font-bold mb-2 text-center" style="color: var(--text-primary);">Register Information</h3>
-            <p class="text-xs text-center mb-4" style="color: var(--text-muted);">For contacting purposes if you win the bid.</p>
+            <p class="text-xs text-center mb-3" style="color: var(--text-muted);">For contacting purposes if you win the bid.</p>
+            <p class="text-xs text-center mb-4 font-semibold" style="color: var(--text-secondary);">Please check carefully — nickname and contact number cannot be changed or cancelled after registration.</p>
 
             <div class="space-y-4">
                 <div>
@@ -601,6 +614,18 @@
         const database = firebase.database();
         const auth = firebase.auth();
         auth.signInAnonymously().catch(() => showToast("Secure sign-in unavailable. Please try again.", "error"));
+        auth.onAuthStateChanged(user => {
+            const savedUser = localStorage.getItem('bid_user');
+            if (!user || !savedUser) return;
+            database.ref(`users/${user.uid}`).once('value').then(snapshot => {
+                if (!snapshot.exists()) {
+                    localStorage.removeItem('bid_user');
+                    localStorage.removeItem('my_bid_records');
+                    localUser = null;
+                    checkLocalLogin();
+                }
+            });
+        });
 
         let localUser = null;
         let globalDataCache = null;
@@ -670,10 +695,10 @@
             if (count) count.textContent = `${STATIC_CURRENT_STANDEES.length.toString().padStart(2, '0')} standees currently available`;
             renderStandees(globalDataCache);
         }
-        renderStaticFallback();
-
-        database.ref('standees').on('value', (snapshot) => {
-            const remoteData = snapshot.val() || {};
+        // Read each public item individually. This keeps live updates working while
+        // the database rules keep every user's private profile unavailable to others.
+        const liveRemoteData = {};
+        function applyLiveStandeeData(remoteData) {
             const activeRemoteEntries = Object.entries(remoteData).filter(([, item]) => item && Number(item.currentPrice) > 0);
             globalDataCache = {};
 
@@ -707,6 +732,14 @@
                 renderMyBids();
             }
             if (pastStandeeCache) renderPastStandees(pastStandeeCache);
+        
+        }
+
+        STATIC_CURRENT_STANDEES.forEach(displayItem => {
+            database.ref('standees/' + displayItem.slug).on('value', snapshot => {
+                liveRemoteData[displayItem.slug] = snapshot.val() || {};
+                applyLiveStandeeData(liveRemoteData);
+            });
         });
 
         pastStandeeCache = STATIC_PAST_STANDEES;
@@ -806,7 +839,7 @@
                 `;
             } else {
                 localUser = null;
-                statusBar.innerHTML = `<span style="color: var(--text-muted);">Not registered</span>`;
+                statusBar.innerHTML = `<button type="button" onclick="toggleLoginModal(true)" class="register-status">REGISTER TO BID</button>`;
             }
         }
 
@@ -825,6 +858,7 @@
             `).join('');
         }
         renderSkeleton();
+        renderStaticFallback();
 
         function renderStandees(data) {
             checkLocalLogin();
@@ -893,7 +927,7 @@
                 } else {
                     bidActionHtml = `
                         <button onclick="toggleLoginModal(true)" class="w-full font-bold py-2 rounded-lg text-sm transition-all" style="background: var(--bg-surface-3); color: var(--text-secondary);">
-                            🔒 Register Information to Unlock Bidding
+                            REGISTER TO BID
                         </button>
                     `;
                 }
@@ -916,8 +950,9 @@
                             <span class="item-status">${statusPillHtml}</span>
                         </div>
                         <div class="card-image-wrap">
-                            <img src="${item.img}" alt="${escapeHtml(item.name)}" loading="lazy" style="${isEnded ? 'filter: grayscale(20%) brightness(0.85);' : ''}">
+                            <img class="standee-image" src="${item.img}" alt="${escapeHtml(item.name)}" loading="lazy" onclick="openImagePreview('${item.img}', '${escapeHtml(item.name).replace(/'/g, "\\'")}')" style="${isEnded ? 'filter: grayscale(20%) brightness(0.85);' : ''}">
                         </div>
+                        <button type="button" class="image-preview-hint" onclick="openImagePreview('${item.img}', '${escapeHtml(item.name).replace(/'/g, "\\'")}')">View full image ↗</button>
                         <div class="item-copy">
                             <div class="item-heading-row">
                                 <h2 class="item-name font-display font-black" style="color: var(--text-primary);">${escapeHtml(item.name)}</h2>
@@ -1052,6 +1087,19 @@
                 toggleConfirmModal(false);
             });
         }
+
+        function openImagePreview(src, name) {
+            const modal = document.getElementById('image-lightbox');
+            const image = document.getElementById('image-lightbox-image');
+            image.src = src;
+            image.alt = `${name} — full standee image`;
+            modal.classList.remove('hidden');
+        }
+
+        function closeImagePreview() {
+            document.getElementById('image-lightbox').classList.add('hidden');
+        }
+
 
         // ---------- Modals ----------
         function toggleLoginModal(show) {
