@@ -657,6 +657,21 @@
         }
 
         // ---------- Data listeners ----------
+        // Show the configured cards immediately during local preview; Firebase then
+        // replaces these defaults with live prices and bid history.
+        function renderStaticFallback() {
+            globalDataCache = {};
+            STATIC_CURRENT_STANDEES.forEach(item => {
+                globalDataCache[item.slug] = { id: item.slug, name: item.name, img: item.img,
+                    eventName: item.eventName, currentPrice: Number(item.startingPrice) || 50,
+                    startingPrice: Number(item.startingPrice) || 50, bidder: 'None', history: {} };
+            });
+            const count = document.getElementById('current-bids-count');
+            if (count) count.textContent = `${STATIC_CURRENT_STANDEES.length.toString().padStart(2, '0')} standees currently available`;
+            renderStandees(globalDataCache);
+        }
+        renderStaticFallback();
+
         database.ref('standees').on('value', (snapshot) => {
             const remoteData = snapshot.val() || {};
             const activeRemoteEntries = Object.entries(remoteData).filter(([, item]) => item && Number(item.currentPrice) > 0);
