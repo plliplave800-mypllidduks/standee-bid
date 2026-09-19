@@ -516,7 +516,7 @@
 
 
 
-        <div class="open-bids-label"><span>Open bids</span><span id="current-bids-count">01 standee currently available</span></div>
+        <div class="open-bids-label"><span>Coming soon</span><span id="current-bids-count">NEXT BIDDING ROUND</span></div>
         <main id="standee-container" aria-label="Available standees"></main>
 
 
@@ -695,22 +695,7 @@
 
 
         // Display content lives in HTML. Firebase only supplies live bid state/history.
-        const STATIC_CURRENT_STANDEES = [
-            {
-                slug: 'bamby2',
-                name: 'CEO BAMBY',
-                img: 'bamby2.jpeg',
-                eventName: "Bamline's Gathering",
-                startingPrice: 50
-            },
-            {
-                slug: 'yejun',
-                name: 'YEJUN',
-                img: 'yejun.jpg',
-                eventName: 'Whisper from the Deep Blue',
-                startingPrice: 50
-            }
-        ];
+        const STATIC_CURRENT_STANDEES = [];
 
 
 
@@ -718,6 +703,8 @@
         // Add completed items here using their GitHub raw image URLs.
         // Never include final prices, winner details, or bid histories.
         const STATIC_PAST_STANDEES = [
+            { id: 'bamby2-past', sourceStandeeId: 'bamby2', name: 'CEO BAMBY', eventName: "Bamline's Gathering", eventDate: '2026-09-19', img: 'bamby2.jpeg' },
+            { id: 'yejun-current-past', sourceStandeeId: 'yejun', name: 'YEJUN', eventName: 'Whisper from The Deep Blue', eventDate: '2026-09-19', img: 'yejun.jpg' },
             { id: '3-bamby-past', name: 'BAMBY', eventName: 'Rěves in MY Ast3rum', img: '3bambystandee.png' },
             { id: '3-eunho-past', name: 'EUNHO', eventName: 'Rěves in MY Ast3rum', img: '3eunhostandee.jpg' },
             { id: '3-hamin-past', name: 'HAMIN', eventName: 'Rěves in MY Ast3rum', img: '3haminstandee.png' },
@@ -974,19 +961,26 @@ function showToast(message, type = 'info') {
 
 
 
-        STATIC_CURRENT_STANDEES.forEach(displayItem => {
-            database.ref('standees/' + displayItem.slug).on('value', snapshot => {
-                liveRemoteData[displayItem.slug] = snapshot.val();
-                loadedLiveStandeeIds.add(displayItem.slug);
-                if (loadedLiveStandeeIds.size === STATIC_CURRENT_STANDEES.length) {
-                    applyLiveStandeeData(liveRemoteData);
-                }
-            }, () => {
-                document.getElementById('standee-container').innerHTML =
-                    '<div class="text-center col-span-full py-10" style="color: var(--text-muted);">Unable to load live bids. Please refresh and try again.</div>';
-                showToast("Live bidding data could not be loaded. Please refresh and try again.", "error");
+        if (STATIC_CURRENT_STANDEES.length === 0) {
+            globalDataCache = {};
+            document.getElementById('current-bids-count').textContent = 'NEXT BIDDING ROUND';
+            document.getElementById('standee-container').innerHTML =
+                '<div class="ended-message text-center col-span-full py-10"><strong>COMING SOON</strong><span>A new MYPlliDduks bidding round will be announced here. ♡</span></div>';
+        } else {
+            STATIC_CURRENT_STANDEES.forEach(displayItem => {
+                database.ref('standees/' + displayItem.slug).on('value', snapshot => {
+                    liveRemoteData[displayItem.slug] = snapshot.val();
+                    loadedLiveStandeeIds.add(displayItem.slug);
+                    if (loadedLiveStandeeIds.size === STATIC_CURRENT_STANDEES.length) {
+                        applyLiveStandeeData(liveRemoteData);
+                    }
+                }, () => {
+                    document.getElementById('standee-container').innerHTML =
+                        '<div class="text-center col-span-full py-10" style="color: var(--text-muted);">Unable to load live bids. Please refresh and try again.</div>';
+                    showToast("Live bidding data could not be loaded. Please refresh and try again.", "error");
+                });
             });
-        });
+        }
 
 
 
