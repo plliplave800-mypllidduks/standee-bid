@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MYPlliDduks Standee Live Bidding</title>
+    <title>Last Dance With Hamin · MYPlliDduks</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -428,6 +428,16 @@
         .ended-message { border-top: 1px solid #CACCD3; padding-top: 17px; }
         .ended-message strong { display: block; font-size: 14px; letter-spacing: .04em; }
         .ended-message span { display: block; margin-top: 5px; color: #777A84; font-size: 12px; }
+        #standee-container.preview-grid { grid-template-columns: minmax(0, 640px); }
+        .coming-soon-card { width: 100%; }
+        .coming-soon-visual { height: min(29vw, 330px); min-height: 250px; position: relative; display: grid; place-items: center; overflow: hidden; background: #FFFFFF; border-bottom: 1px solid #CACCD3; }
+        .coming-soon-visual::before { content: ""; position: absolute; width: 54%; aspect-ratio: 1; border: 1px solid #CACCD3; border-radius: 50%; opacity: .8; }
+        .coming-soon-visual::after { content: ""; position: absolute; width: 72%; height: 1px; background: #D9DAE0; transform: rotate(-29deg); }
+        .coming-soon-visual-copy { position: relative; z-index: 1; text-align: center; }
+        .coming-soon-visual-name { display: block; font-size: clamp(44px, 7vw, 80px); line-height: .84; letter-spacing: -.09em; font-weight: 800; }
+        .coming-soon-visual-note { display: block; margin-top: 15px; font: 700 10px/1 'Space Mono', monospace; letter-spacing: .14em; color: #777A84; text-transform: uppercase; }
+        .coming-soon-event { margin-top: 10px; color: #676A74; font-size: 14px; line-height: 1.5; }
+        .coming-soon-notice { border-top: 1px solid #CACCD3; margin-top: 24px; padding-top: 16px; font-size: 13px; line-height: 1.55; color: #676A74; }
         .past-bids-section { padding: 72px 0 82px; border-top: 1px solid #CACCD3; }
         #past-bids-section, #rules-heading { scroll-margin-top: 24px; }
         .past-bids-intro { display: grid; grid-template-columns: minmax(0, .72fr) minmax(260px, 1.28fr); gap: 42px; align-items: end; margin-bottom: 38px; }
@@ -457,6 +467,8 @@
             .item-topline { margin-bottom: 10px; }
             .card-image-wrap { height: clamp(180px, 52vw, 240px); min-height: 0; }
             .item-copy { padding-top: 12px; }
+            #standee-container.preview-grid { grid-template-columns: 1fr; }
+            .coming-soon-visual { height: 58vw; min-height: 220px; max-height: 280px; }
             .item-heading-row { display: block; }
             .item-name { font-size: clamp(24px, 8vw, 38px); }
             .item-status { margin-top: 8px; display: inline-flex; }
@@ -500,13 +512,13 @@
 
         <header class="hero-intro">
             <div>
-                <p class="hero-kicker"><span class="live-dot"></span>&nbsp; Live Updates</p>
-                <h1 id="page-title" class="font-display font-black" style="color: var(--text-primary);">MYPlliDduks Standee Bidding</h1>
-                <p id="page-subtitle" style="color: var(--text-secondary);">Real-time updates! Enter your name and phone number to participate.</p>
+                <p class="hero-kicker"><span class="live-dot"></span>&nbsp; MYPlliDduks presents</p>
+                <h1 id="page-title" class="font-display font-black" style="color: var(--text-primary);">Last Dance With Hamin</h1>
+                <p id="page-subtitle" style="color: var(--text-secondary);">The next standee bidding round is on its way. Details will be announced soon.</p>
             </div>
             <div class="hero-timer">
                 <div id="timer-banner">
-                    <h3 id="timer-label" class="eyebrow">⏳ Time Remaining <span style="color: var(--text-muted); letter-spacing: normal; text-transform: none;">(Malaysia Time, GMT+8)</span></h3>
+                    <h3 id="timer-label" class="eyebrow">⏳ Countdown <span style="color: var(--text-muted); letter-spacing: normal; text-transform: none;">(Malaysia Time, GMT+8)</span></h3>
                     <div id="countdown-clock" class="font-mono-num font-bold" style="color: var(--text-primary);">Calculating...</div>
                 </div>
                 <div id="user-status-bar" class="mt-4 text-sm" style="color: var(--text-secondary);">Checking status...</div>
@@ -516,8 +528,8 @@
 
 
 
-        <div class="open-bids-label"><span>Coming soon</span><span id="current-bids-count">NEXT BIDDING ROUND</span></div>
-        <main id="standee-container" aria-label="Available standees"></main>
+        <div class="open-bids-label"><span>Next bidding round</span><span id="current-bids-count">HAMIN · COMING SOON</span></div>
+        <main id="standee-container" aria-label="Upcoming standee" aria-live="polite"></main>
 
 
 
@@ -666,7 +678,7 @@
 
     <script>
         // ======= ⏰ 截止时间统一设置区域 (fixed to Malaysia Time, GMT+8, so all viewers see the same countdown) =======
-        const TARGET_TIME = new Date('2026-09-19T17:00:00+08:00').getTime();
+        const TARGET_TIME = new Date('2026-11-07T17:30:00+08:00').getTime();
 
 
 
@@ -694,8 +706,25 @@
 
 
 
+        // The next round is deliberately preview-only until its artwork and live Firebase
+        // entry are ready. To activate it later, upload the image, set `image` to its
+        // filename, set `biddingEnabled` to true, and create `standees/hamin` in Firebase.
+        // Existing users, bid histories, past standees, and Firebase Rules are untouched.
+        const HAMIN_STANDEE = {
+            slug: 'hamin',
+            name: 'HAMIN',
+            eventName: 'LAST DANCE WITH HAMIN',
+            image: '',
+            biddingEnabled: false
+        };
+
         // Display content lives in HTML. Firebase only supplies live bid state/history.
-        const STATIC_CURRENT_STANDEES = [];
+        const STATIC_CURRENT_STANDEES = HAMIN_STANDEE.biddingEnabled ? [{
+            slug: HAMIN_STANDEE.slug,
+            name: HAMIN_STANDEE.name,
+            eventName: HAMIN_STANDEE.eventName,
+            img: HAMIN_STANDEE.image
+        }] : [];
 
 
 
@@ -703,8 +732,8 @@
         // Add completed items here using their GitHub raw image URLs.
         // Never include final prices, winner details, or bid histories.
         const STATIC_PAST_STANDEES = [
-            { id: 'bamby2-past', sourceStandeeId: 'bamby2', name: 'CEO BAMBY', eventName: "Bamline's Gathering", eventDate: '2026-09-19', img: 'bamby2.jpeg' },
-            { id: 'yejun-current-past', sourceStandeeId: 'yejun', name: 'YEJUN', eventName: 'Whisper from The Deep Blue', eventDate: '2026-09-19', img: 'yejun.jpg' },
+            { id: 'bamby2-past', sourceStandeeId: 'bamby2', name: 'CEO BAMBY', eventName: "Bamline's Gathering", img: 'bamby2.jpeg' },
+            { id: 'yejun-current-past', sourceStandeeId: 'yejun', name: 'YEJUN', eventName: 'Whisper from The Deep Blue', img: 'yejun.jpg' },
             { id: '3-bamby-past', name: 'BAMBY', eventName: 'Rěves in MY Ast3rum', img: '3bambystandee.png' },
             { id: '3-eunho-past', name: 'EUNHO', eventName: 'Rěves in MY Ast3rum', img: '3eunhostandee.jpg' },
             { id: '3-hamin-past', name: 'HAMIN', eventName: 'Rěves in MY Ast3rum', img: '3haminstandee.png' },
@@ -961,11 +990,37 @@ function showToast(message, type = 'info') {
 
 
 
+        function renderHaminPreview() {
+            const container = document.getElementById('standee-container');
+            const hasImage = Boolean(HAMIN_STANDEE.image);
+            const visual = hasImage
+                ? `<img class="standee-image" src="${escapeHtml(HAMIN_STANDEE.image)}" alt="${escapeHtml(HAMIN_STANDEE.name)} standee" loading="lazy" onclick="openImagePreview('${escapeHtml(HAMIN_STANDEE.image).replace(/'/g, "\\'")}', '${escapeHtml(HAMIN_STANDEE.name).replace(/'/g, "\\'")}')">`
+                : `<div class="coming-soon-visual" role="img" aria-label="HAMIN standee image coming soon"><div class="coming-soon-visual-copy"><strong class="coming-soon-visual-name">HAMIN</strong><span class="coming-soon-visual-note">Standee reveal soon ♡</span></div></div>`;
+            const imageHint = hasImage
+                ? `<button type="button" class="image-preview-hint" onclick="openImagePreview('${escapeHtml(HAMIN_STANDEE.image).replace(/'/g, "\\'")}', '${escapeHtml(HAMIN_STANDEE.name).replace(/'/g, "\\'")}')">View full image ↗</button>`
+                : '';
+
+            container.classList.add('preview-grid');
+            container.innerHTML = `
+                <article class="standee-card coming-soon-card">
+                    <div class="item-topline">
+                        <span class="item-number">01</span>
+                        <span class="item-status">COMING SOON</span>
+                    </div>
+                    <div class="card-image-wrap${hasImage ? '' : ' hidden'}">${hasImage ? visual : ''}</div>
+                    ${hasImage ? imageHint : visual}
+                    <div class="item-copy">
+                        <h2 class="item-name font-display font-black" style="color: var(--text-primary);">${escapeHtml(HAMIN_STANDEE.name)}</h2>
+                        <p class="coming-soon-event">${escapeHtml(HAMIN_STANDEE.eventName)}</p>
+                        <p class="coming-soon-notice">The standee image and bidding details will be revealed soon. No bids are open at this time.</p>
+                    </div>
+                </article>`;
+        }
+
         if (STATIC_CURRENT_STANDEES.length === 0) {
             globalDataCache = {};
-            document.getElementById('current-bids-count').textContent = 'NEXT BIDDING ROUND';
-            document.getElementById('standee-container').innerHTML =
-                '<div class="ended-message text-center col-span-full py-10"><strong>COMING SOON</strong><span>A new MYPlliDduks bidding round will be announced here. ♡</span></div>';
+            document.getElementById('current-bids-count').textContent = 'HAMIN · COMING SOON';
+            renderHaminPreview();
         } else {
             STATIC_CURRENT_STANDEES.forEach(displayItem => {
                 database.ref('standees/' + displayItem.slug).on('value', snapshot => {
@@ -1057,21 +1112,21 @@ function showToast(message, type = 'info') {
 
             if (difference <= 0) {
                 isEnded = true;
+                if (!HAMIN_STANDEE.biddingEnabled) {
+                    document.getElementById('countdown-clock').innerHTML = "EVENT HAS BEGUN";
+                    document.getElementById('timer-label').innerHTML = '📢 Status <span style="color: var(--text-muted); letter-spacing: normal; text-transform: none;">(Malaysia Time, GMT+8)</span>';
+                    document.getElementById('page-subtitle').innerText = "The HAMIN standee and bidding details will be announced soon.";
+                    clearInterval(timerInterval);
+                    return;
+                }
+
                 document.getElementById('countdown-clock').innerHTML = "❌ BIDDING HAS ENDED";
                 document.getElementById('timer-banner').style.borderColor = 'rgba(226,87,76,0.4)';
                 document.getElementById('countdown-clock').style.color = 'var(--danger)';
                 document.getElementById('timer-label').innerHTML = '📢 Status Announcement <span style="color: var(--text-muted); letter-spacing: normal; text-transform: none;">(Malaysia Time, GMT+8)</span>';
-
-
-
-
                 document.getElementById('page-title').innerHTML = "MYPlliDduks Standee Bidding [CLOSED]";
                 document.getElementById('page-subtitle').style.color = 'var(--danger)';
                 document.getElementById('page-subtitle').innerText = "Thank you for participating! The bidding session has officially ended.";
-
-
-
-
                 if (globalDataCache) renderStandees(globalDataCache);
                 clearInterval(timerInterval);
                 return;
@@ -1090,7 +1145,9 @@ function showToast(message, type = 'info') {
 
             if (difference <= (30 * 60 * 1000) && !closingSoonApplied) {
                 closingSoonApplied = true;
-                document.getElementById('timer-label').innerHTML = 'Closing Soon <span style="color: var(--text-muted); letter-spacing: normal; text-transform: none;">(Malaysia Time, GMT+8)</span>';
+                document.getElementById('timer-label').innerHTML = HAMIN_STANDEE.biddingEnabled
+                    ? 'Closing Soon <span style="color: var(--text-muted); letter-spacing: normal; text-transform: none;">(Malaysia Time, GMT+8)</span>'
+                    : 'Starting Soon <span style="color: var(--text-muted); letter-spacing: normal; text-transform: none;">(Malaysia Time, GMT+8)</span>';
                 if (globalDataCache) renderStandees(globalDataCache);
             }
 
@@ -1110,6 +1167,11 @@ function showToast(message, type = 'info') {
             const statusBar = document.getElementById('user-status-bar');
             if (!statusBar) return;
 
+            if (!HAMIN_STANDEE.biddingEnabled) {
+                statusBar.innerHTML = `<span class="register-status" style="cursor: default;">BIDDING DETAILS COMING SOON</span>`;
+                return;
+            }
+
 
             if (!registrationReady) {
                 statusBar.innerHTML = `<span class="register-status" style="cursor: default;">CHECKING REGISTRATION...</span>`;
@@ -1128,6 +1190,10 @@ function showToast(message, type = 'info') {
 
         // ---------- Render standees ----------
         function renderSkeleton() {
+            if (!HAMIN_STANDEE.biddingEnabled) {
+                renderHaminPreview();
+                return;
+            }
             const container = document.getElementById('standee-container');
             container.innerHTML = Array.from({ length: STATIC_CURRENT_STANDEES.length }).map(() => `
                 <div class="skeleton-card">
