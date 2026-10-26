@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -376,6 +376,8 @@
         .nav-link { color: #555963; transition: color .2s ease; }
         .nav-link:hover { color: #202126; }
         .nav-my-bids { border-bottom: 1px solid #202126; padding: 4px 0; color: #202126; }
+        .nav-registration { border-bottom: 1px solid #202126; padding: 4px 0; color: #202126; font: inherit; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+        .nav-registration:focus-visible { outline: 2px solid #202126; outline-offset: 4px; }
         .register-status { border-bottom: 1px solid #202126; padding: 4px 0; color: #202126; font: inherit; font-weight: 700; letter-spacing: .1em; }
         .standee-image { width: auto !important; max-width: 100% !important; height: 100% !important; object-fit: contain !important; object-position: center !important; cursor: zoom-in; }
         .standee-image-trigger { display: grid; width: 100%; height: 100%; min-width: 0; min-height: 0; padding: 0; border: 0; background: transparent; place-items: center; cursor: zoom-in; }
@@ -630,7 +632,7 @@
         #hamin-chat-send { min-height: 46px; border-radius: 6px; }
 
         @media (max-width: 767px) {
-            .nav-actions { gap: clamp(7px, 2vw, 12px); font-size: clamp(8px, 2.35vw, 10px); }
+            .nav-actions { gap: clamp(4px, 1.2vw, 6px); font-size: clamp(8px, 2.2vw, 9px); }
             .nav-link.optional { display: inline-flex; }
             .nav-actions a, .nav-actions button { white-space: nowrap; }
             #login-modal .modal-box, #my-registration-modal .modal-box { padding: 28px 22px 20px; }
@@ -653,6 +655,7 @@
                 <a class="nav-link optional" href="#rules-heading" aria-label="How to Bid — jump to the bidding guide">How to Bid</a>
                 <a class="nav-link" href="#past-bids-section">Past Bids</a>
                 <button onclick="toggleMyBidsModal(true)" class="nav-my-bids">My Bids ↗</button>
+                <button id="nav-registration" type="button" onclick="toggleLoginModal(true)" class="nav-registration" aria-label="Registration">Registration</button>
             </div>
         </nav>
 
@@ -920,6 +923,10 @@
             { id: 'bamby4-past', name: 'BAMBY CHIBI', eventName: "Bamline's Gathering", img: 'bamby4.jpg' },
             { id: 'yejun-current-past', sourceStandeeId: 'yejun', name: 'YEJUN', eventName: 'Whisper from The Deep Blue', img: 'yejun.jpg' }
         ];;
+        const PAST_BID_DISPLAY_ORDER = [
+            '3-yejun-past', '3-noah-past', '3-bamby-past', '3-eunho-past', '3-hamin-past',
+            'eunho-past', 'bamby1-past', 'bamby2-past', 'bamby3-past', 'bamby4-past', 'yejun-current-past'
+        ];
 
 
 
@@ -1472,7 +1479,15 @@ function showToast(message, type = 'info') {
                 .map(([key, item]) => ({ ...item, id: item.id || key }))
                 .filter(item => item.img && item.name)
                 .filter(item => !activeIds.has(String(item.sourceStandeeId || item.id)))
-                .filter(item => !activeImages.has(item.img)) : [];
+                .filter(item => !activeImages.has(item.img))
+                .sort((a, b) => {
+                    const aIndex = PAST_BID_DISPLAY_ORDER.indexOf(a.id);
+                    const bIndex = PAST_BID_DISPLAY_ORDER.indexOf(b.id);
+                    if (aIndex === -1 && bIndex === -1) return 0;
+                    if (aIndex === -1) return 1;
+                    if (bIndex === -1) return -1;
+                    return aIndex - bIndex;
+                }) : [];
 
 
 
@@ -1670,9 +1685,9 @@ function showToast(message, type = 'info') {
                 const reason = !haminChatConfigReady ? 'Chat status could not be verified. Posting is unavailable.'
                     : haminChatPaused ? 'Chat is temporarily paused by the organizer.'
                     : Date.now() >= TARGET_TIME ? 'Chat is closed because the event deadline has passed.'
-                            : !haminChatEnabled ? 'The organizer has not opened chat yet. You can still read the messages above.'
+                            : !haminChatEnabled ? 'Live Chat is read-only until the organizer enables it. Chat availability is independent of bidding; you can still read the messages above.'
                             : 'Chat is not available right now.';
-                compose.innerHTML = `<p class="hamin-chat-note">${escapeHtml(reason)} You can still read the messages above.</p>`;
+                compose.innerHTML = `<p class="hamin-chat-note">${escapeHtml(reason)}</p>`;
             } else if (!registered) {
                 compose.innerHTML = `<p class="hamin-chat-note">Connect a Google account and complete HAMIN registration to join the conversation. Visitors can read, but not post.</p><button type="button" class="hamin-chat-mod-toggle mt-2" onclick="toggleLoginModal(true)">Register to participate</button>`;
             } else {
@@ -1848,6 +1863,12 @@ function showToast(message, type = 'info') {
         // ---------- Login ----------
         function checkLocalLogin() {
             const statusBar = document.getElementById('user-status-bar');
+            const navRegistration = document.getElementById('nav-registration');
+            if (navRegistration) {
+                const registered = Boolean(localUser);
+                navRegistration.textContent = registered ? 'My Registration' : 'Registration';
+                navRegistration.setAttribute('aria-label', registered ? 'My Registration' : 'Registration');
+            }
             if (!statusBar) return;
 
             if (!registrationReady) {
@@ -2370,7 +2391,6 @@ function renderStandees(data) {
         });
 
         function toggleLoginModal(show) {
-            if (isEnded) return;
             const modal = document.getElementById('login-modal');
             if (show && localUser) {
                 toggleMyRegistrationModal(true);
