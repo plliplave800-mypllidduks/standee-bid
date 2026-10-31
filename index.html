@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -470,7 +470,7 @@
         .hamin-chat-mod-tools { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid #D8D9DE; color: #777A84; font: 700 9px/1.4 'Space Mono', monospace; letter-spacing: .07em; text-transform: uppercase; }
         .hamin-chat-mod-toggle { color: #415D9A; border-bottom: 1px solid currentColor; padding-bottom: 2px; }
         .bidding-layout { display: grid; grid-template-columns: minmax(0, 1.22fr) minmax(0, .9fr); gap: clamp(30px, 4vw, 56px); align-items: start; margin-bottom: 78px; }
-        #bidding-layout #standee-container { min-width: 0; grid-template-columns: minmax(0, 1fr); gap: 0; margin: 0 !important; }
+        #bidding-layout #standee-container { min-width: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(18px, 2vw, 28px); margin: 0 !important; }
         #bidding-layout .bidding-chat-column { min-width: 0; margin: 0; padding: 34px 0 0 clamp(22px, 3vw, 38px); border-top: 0; border-left: 1px solid #CACCD3; }
         .bidding-chat-column .hamin-chat-head { align-items: flex-start; margin-bottom: 16px; }
         .bidding-chat-column .hamin-chat-title { max-width: 360px; font-size: clamp(25px, 2.6vw, 35px); line-height: 1; }
@@ -491,7 +491,7 @@
         .past-item-event { margin-top: 7px; color: #6D707A; font-size: 12px; line-height: 1.45; }
         .past-item-meta { display: flex; justify-content: space-between; gap: 12px; margin-top: 13px; padding-top: 10px; border-top: 1px solid #D8D9DE; font: 700 9px/1.3 'Space Mono', monospace; letter-spacing: .08em; text-transform: uppercase; color: #797C85; }
         .past-home-status { color: #8B6678; }
-        @media (max-width: 920px) {
+        @media (max-width: 1100px) {
             .bidding-layout { grid-template-columns: minmax(0, 1fr); gap: 0; margin-bottom: 70px; }
             #bidding-layout .bidding-chat-column { padding: 30px 0 0; border-left: 0; border-top: 1px solid #CACCD3; }
             .bidding-chat-column .hamin-chat-title { max-width: none; }
@@ -506,7 +506,8 @@
             #page-subtitle { max-width: 390px; }
             .hero-timer { margin-top: 32px; padding: 18px 0 0; border-top: 1px solid #CACCD3; }
             #standee-container { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; padding-top: 20px; margin-bottom: 72px !important; }
-            #bidding-layout #standee-container { grid-template-columns: minmax(0, 1fr); gap: 0; padding-top: 20px; margin: 0 !important; }
+            #bidding-layout #standee-container { grid-template-columns: minmax(0, 1fr); gap: 28px; padding-top: 20px; margin: 0 !important; }
+            #standee-container .card-image-wrap { height: min(64vw, 280px); min-height: 210px; }
             .item-topline { margin-bottom: 10px; }
             .card-image-wrap { height: clamp(180px, 52vw, 240px); min-height: 0; }
             .item-copy { padding-top: 12px; }
@@ -888,22 +889,18 @@
 
         // HAMIN pricing and artwork are static presentation settings. The authoritative
         // bidding state is always read from Realtime Database and enforced by Rules.
-        const HAMIN_STANDEE = {
-            slug: 'hamin',
-            name: 'HAMIN',
-            eventName: 'Last Dance with Hamin',
-            image: 'hamin.jpg',
-            startingPrice: 50,
-            minimumIncrement: 5
-        };
-
-        // The card is rendered only when server-confirmed status is OPEN or PAUSED.
-        const STATIC_CURRENT_STANDEES = [{
-            slug: HAMIN_STANDEE.slug,
-            name: HAMIN_STANDEE.name,
-            eventName: HAMIN_STANDEE.eventName,
-            img: HAMIN_STANDEE.image
-        }];
+        const HAMIN_ITEMS = [
+            { slug: 'hamin', name: 'HAMIN · LATIN DANCE', eventName: 'Last Dance with Hamin', image: 'haminlatin.png', startingPrice: 50, minimumIncrement: 5 },
+            { slug: 'hamin-hyperdrive-chibi', name: 'HAMIN · HYPERDRIVE CHIBI', eventName: 'Last Dance with Hamin', image: 'hyperdrivechibi.png', startingPrice: 15, minimumIncrement: 5 },
+            { slug: 'hamin-ballet-chibi', name: 'HAMIN · BALLET CHIBI', eventName: 'Last Dance with Hamin', image: 'balletchibi.png', startingPrice: 15, minimumIncrement: 5 },
+            { slug: 'hamin-taekwondo-chibi', name: 'HAMIN · TAEKWONDO CHIBI', eventName: 'Last Dance with Hamin', image: 'taewondochibi.png', startingPrice: 15, minimumIncrement: 5 }
+        ];
+        const HAMIN_STANDEE = HAMIN_ITEMS[0];
+        const STATIC_CURRENT_STANDEES = HAMIN_ITEMS.map(item => ({
+            slug: item.slug, name: item.name, eventName: item.eventName, img: item.image,
+            startingPrice: item.startingPrice, minimumIncrement: item.minimumIncrement
+        }));
+        const HAMIN_ITEM_BY_ID = Object.fromEntries(STATIC_CURRENT_STANDEES.map(item => [item.slug, item]));
 
 
 
@@ -1039,14 +1036,8 @@
 
 
         function refreshRegistrationUI() {
-            if (biddingConfigCache.hamin?.status !== 'OPEN' && biddingConfigCache.hamin?.status !== 'PAUSED') {
-                renderHaminPreview();
-                checkLocalLogin();
-            } else if (globalDataCache && Object.keys(globalDataCache).length) {
-                renderStandees(globalDataCache);
-            } else {
-                checkLocalLogin();
-            }
+            renderStandees(globalDataCache || {});
+            checkLocalLogin();
         }
 
 
@@ -1198,10 +1189,8 @@ function showToast(message, type = 'info') {
         const loadedLiveConfigIds = new Set();
         let biddingConfigCache = {};
         let activeDeadlineAt = TARGET_TIME;
-        let biddingConfigSnapshotReady = false;
-        let haminStandeeSnapshotReady = false;
-        let haminBiddingWritePending = false;
-        let lastConfirmedBiddingStatus = 'NOT INITIALIZED';
+        const biddingWritePendingIds = new Set();
+        const confirmedBiddingStatuses = {};
 
 
 
@@ -1209,7 +1198,9 @@ function showToast(message, type = 'info') {
         function applyLiveStandeeData(remoteData, remoteConfig = {}) {
             globalDataCache = {};
             biddingConfigCache = remoteConfig;
-            if (!haminBiddingWritePending) lastConfirmedBiddingStatus = serverBiddingStatus();
+            STATIC_CURRENT_STANDEES.forEach(item => {
+                if (!biddingWritePendingIds.has(item.slug)) confirmedBiddingStatuses[item.slug] = serverBiddingStatus(item.slug);
+            });
 
 
 
@@ -1218,7 +1209,7 @@ function showToast(message, type = 'info') {
                 const remoteItem = remoteData[displayItem.slug];
                 const config = remoteConfig[displayItem.slug];
                 const authoritativePrice = remoteItem && Number(remoteItem.currentPrice);
-                if (!remoteItem || !config || !['OPEN', 'PAUSED'].includes(config.status) || !Number.isFinite(authoritativePrice) || authoritativePrice <= 0) return;
+                if (!remoteItem || !config || config.status !== 'OPEN' || Number(config.deadlineAt) !== TARGET_TIME || Date.now() >= TARGET_TIME || !Number.isFinite(authoritativePrice) || authoritativePrice <= 0) return;
 
 
 
@@ -1229,6 +1220,8 @@ function showToast(message, type = 'info') {
                     name: displayItem.name,
                     img: displayItem.img,
                     eventName: displayItem.eventName,
+                    startingPrice: displayItem.startingPrice,
+                    minimumIncrement: displayItem.minimumIncrement,
                     currentPrice: authoritativePrice,
                     deadlineAt: Number(config.deadlineAt) || TARGET_TIME
                 };
@@ -1240,16 +1233,12 @@ function showToast(message, type = 'info') {
             const availableCount = Object.keys(globalDataCache).length;
             document.getElementById('current-bids-count').textContent = availableCount
                 ? `${availableCount.toString().padStart(2, '0')} ${availableCount === 1 ? 'standee' : 'standees'} currently available`
-                : 'HAMIN · COMING SOON';
+                : '04 HAMIN STANDEES · COMING SOON';
 
 
 
 
-            if (availableCount) {
-                renderStandees(globalDataCache);
-            } else {
-                renderHaminPreview();
-            }
+            renderStandees(globalDataCache);
             if (document.getElementById('mybids-modal').classList.contains('hidden') === false) {
                 renderMyBids();
             }
@@ -1260,139 +1249,127 @@ function showToast(message, type = 'info') {
 
 
 
-        function renderHaminPreview() {
-            const container = document.getElementById('standee-container');
-            const hasImage = Boolean(HAMIN_STANDEE.image);
-            const visual = hasImage
-                ? `<button type="button" class="standee-image-trigger" aria-label="View full image of ${escapeHtml(HAMIN_STANDEE.name)}" onclick="openImagePreview('${escapeHtml(HAMIN_STANDEE.image).replace(/'/g, "\\'")}', '${escapeHtml(HAMIN_STANDEE.name).replace(/'/g, "\\'")}')"><img class="standee-image" src="${escapeHtml(HAMIN_STANDEE.image)}" alt="" loading="lazy"></button>`
-                : `<div class="coming-soon-visual" role="img" aria-label="HAMIN standee image coming soon"><div class="coming-soon-visual-copy"><strong class="coming-soon-visual-name">HAMIN</strong><span class="coming-soon-visual-note">Standee reveal soon ♡</span></div></div>`;
-            const imageHint = hasImage
-                ? `<button type="button" class="image-preview-hint" onclick="openImagePreview('${escapeHtml(HAMIN_STANDEE.image).replace(/'/g, "\\'")}', '${escapeHtml(HAMIN_STANDEE.name).replace(/'/g, "\\'")}')">View full image ↗</button>`
-                : '';
-
-            container.classList.add('preview-grid');
-            container.innerHTML = `
-                <article class="standee-card coming-soon-card">
-                    <div class="item-topline">
-                        <span class="item-number">01</span>
-                        <span class="item-status">COMING SOON</span>
-                    </div>
-                    <div class="card-image-wrap${hasImage ? '' : ' hidden'}">${hasImage ? visual : ''}</div>
-                    ${hasImage ? imageHint : visual}
-                    <div class="item-copy">
-                        <h2 class="item-name font-display font-black" style="color: var(--text-primary);">${escapeHtml(HAMIN_STANDEE.name)}</h2>
-                        <p class="coming-soon-event">${escapeHtml(HAMIN_STANDEE.eventName)}</p>
-                        <p class="coming-soon-notice">The standee image and bidding details will be revealed soon. No bids are open at this time.</p>
-                        ${renderHaminBiddingAdmin()}
-                    </div>
-                </article>`;
-        }
-
-        function serverBiddingStatus() {
-            const config = biddingConfigCache.hamin || {};
+        function serverBiddingStatus(standeeId) {
+            const config = biddingConfigCache[standeeId] || {};
             if (!Number(config.deadlineAt) || Number(config.deadlineAt) !== TARGET_TIME) return 'NOT INITIALIZED';
             if (Date.now() >= Number(config.deadlineAt)) return 'ENDED';
             return ['READY', 'OPEN', 'PAUSED'].includes(config.status) ? config.status : 'UNAVAILABLE';
         }
 
-        function renderHaminBiddingAdmin() {
-            if (!isChatModerator()) return '';
-            const status = haminBiddingWritePending ? `UPDATING · ${lastConfirmedBiddingStatus}` : serverBiddingStatus();
-            const initialized = Number(biddingConfigCache.hamin?.deadlineAt) === TARGET_TIME;
-            const standeeExists = Boolean(liveRemoteData.hamin);
-            let action = '';
-            if (haminBiddingWritePending || !biddingConfigSnapshotReady || !haminStandeeSnapshotReady) {
-                action = '<span class="text-xs" style="color:var(--text-muted)">Checking server configuration…</span>';
-            } else if (!initialized && !standeeExists) {
-                action = '<button type="button" class="register-status" onclick="initializeHaminBidding()">Initialize HAMIN Bidding</button>';
-            } else if (!initialized || !standeeExists) {
-                action = '<span class="text-xs" style="color:var(--text-muted)">Configuration needs review. No changes are available.</span>';
-            } else if (initialized && status === 'READY') {
-                action = '<button type="button" class="register-status" onclick="setHaminBiddingStatus(\'OPEN\', true)">Enable Bidding</button>';
-            } else if (initialized && status === 'OPEN') {
-                action = '<button type="button" class="register-status" onclick="setHaminBiddingStatus(\'PAUSED\', false)">Pause Bidding</button>';
-            } else if (initialized && status === 'PAUSED') {
-                action = '<button type="button" class="register-status" onclick="setHaminBiddingStatus(\'OPEN\', true)">Resume Bidding</button>';
-            }
-            return `<section class="organizer-bidding-controls" aria-label="Organizer bidding controls" style="border-top:1px solid var(--border-subtle); margin-top:1.25rem; padding-top:1rem;">
-                <p class="meta-label">ORGANIZER · SERVER STATUS: ${escapeHtml(status)}</p>
-                <div style="margin-top:.65rem">${action}</div>
-            </section>`;
+        function isStandeeOpen(standeeId) {
+            const config = biddingConfigCache[standeeId] || {};
+            return config.status === 'OPEN' && Number(config.deadlineAt) === TARGET_TIME && Date.now() < TARGET_TIME;
         }
 
-        async function refreshHaminBiddingState() {
+        function renderStandeePreview(displayItem, itemIndex) {
+            const name = displayItem.name;
+            const image = displayItem.img;
+            const previewLabel = `${name} image placeholder`;
+            const status = serverBiddingStatus(displayItem.slug);
+            const isPending = biddingWritePendingIds.has(displayItem.slug);
+            const statusText = isPending ? `UPDATING · ${confirmedBiddingStatuses[displayItem.slug] || status}` : status;
+            const safeImage = escapeHtml(image).replace(/'/g, "\\'");
+            const safeName = escapeHtml(name).replace(/'/g, "\\'");
+            const organizer = isChatModerator() ? `
+                <section class="organizer-bidding-controls" aria-label="Organizer bidding controls for ${escapeHtml(name)}" style="border-top:1px solid var(--border-subtle); margin-top:1.25rem; padding-top:1rem;">
+                    <p class="meta-label">ORGANIZER · SERVER STATUS: ${escapeHtml(statusText)}</p>
+                    <div style="margin-top:.65rem">${renderStandeeAdminAction(displayItem, status, isPending)}</div>
+                </section>` : '';
+            return `<article class="standee-card coming-soon-card" data-standee-id="${escapeHtml(displayItem.slug)}">
+                <div class="item-topline"><span class="item-number">${String(itemIndex + 1).padStart(2, '0')}</span><span class="item-status">${status === 'PAUSED' ? 'PAUSED' : status === 'READY' ? 'READY' : 'COMING SOON'}</span></div>
+                <div class="card-image-wrap"><button type="button" class="standee-image-trigger" aria-label="View full image of ${escapeHtml(name)}" onclick="openImagePreview('${safeImage}', '${safeName}')"><img class="standee-image" src="${safeImage}" alt="${previewLabel}" loading="lazy"></button></div>
+                <button type="button" class="image-preview-hint" onclick="openImagePreview('${safeImage}', '${safeName}')">View full image ↗</button>
+                <div class="item-copy"><h2 class="item-name font-display font-black" style="color: var(--text-primary);">${escapeHtml(name)}</h2>
+                    <p class="coming-soon-event">${escapeHtml(displayItem.eventName)}</p>
+                    <p class="coming-soon-notice">The standee image and bidding details will be revealed soon. No bids are open at this time.</p>${organizer}</div>
+            </article>`;
+        }
+
+        function renderStandeeAdminAction(displayItem, status, isPending) {
+            const slug = displayItem.slug;
+            const ready = loadedLiveConfigIds.has(slug) && loadedLiveStandeeIds.has(slug);
+            const exists = Boolean(liveRemoteData[slug]) || Boolean(biddingConfigCache[slug] && Number(biddingConfigCache[slug].deadlineAt) === TARGET_TIME);
+            if (isPending || !ready) return '<span class="text-xs" style="color:var(--text-muted)">Checking server configuration…</span>';
+            if (!exists && status === 'NOT INITIALIZED') return `<button type="button" class="register-status" onclick="initializeHaminStandee('${slug}')">Initialize ${escapeHtml(displayItem.name)}</button>`;
+            if (!liveRemoteData[slug] || Number(biddingConfigCache[slug]?.deadlineAt) !== TARGET_TIME) return '<span class="text-xs" style="color:var(--text-muted)">Configuration needs review. No changes are available.</span>';
+            if (status === 'READY') return `<button type="button" class="register-status" onclick="setHaminStandeeStatus('${slug}', 'OPEN', true)">Enable Bidding</button>`;
+            if (status === 'OPEN') return `<button type="button" class="register-status" onclick="setHaminStandeeStatus('${slug}', 'PAUSED', false)">Pause Bidding</button>`;
+            if (status === 'PAUSED') return `<button type="button" class="register-status" onclick="setHaminStandeeStatus('${slug}', 'OPEN', true)">Resume Bidding</button>`;
+            return '';
+        }
+
+        function renderHaminPreview() {
+            const container = document.getElementById('standee-container');
+            container.classList.remove('preview-grid');
+            container.innerHTML = STATIC_CURRENT_STANDEES.map((item, index) => renderStandeePreview(item, index)).join('');
+        }
+
+        async function refreshHaminBiddingState(standeeId) {
             const [configSnapshot, standeeSnapshot] = await Promise.all([
-                database.ref('biddingConfig/hamin').once('value'),
-                database.ref('standees/hamin').once('value')
+                database.ref(`biddingConfig/${standeeId}`).once('value'),
+                database.ref(`standees/${standeeId}`).once('value')
             ]);
-            liveRemoteConfig.hamin = configSnapshot.val() || {};
-            liveRemoteData.hamin = standeeSnapshot.val();
-            biddingConfigSnapshotReady = true;
-            haminStandeeSnapshotReady = true;
-            loadedLiveConfigIds.add('hamin');
-            loadedLiveStandeeIds.add('hamin');
-            activeDeadlineAt = Number(liveRemoteConfig.hamin.deadlineAt) || TARGET_TIME;
+            liveRemoteConfig[standeeId] = configSnapshot.val() || {};
+            liveRemoteData[standeeId] = standeeSnapshot.val();
+            biddingConfigCache[standeeId] = liveRemoteConfig[standeeId];
+            loadedLiveConfigIds.add(standeeId);
+            loadedLiveStandeeIds.add(standeeId);
+            activeDeadlineAt = TARGET_TIME;
             applyLiveStandeeData(liveRemoteData, liveRemoteConfig);
         }
 
-        async function initializeHaminBidding() {
-            if (!isChatModerator()) return showModerationToast('Organizer access is required.', 'error');
+        async function initializeHaminStandee(standeeId) {
+            const item = HAMIN_ITEM_BY_ID[standeeId];
+            if (!item || !isChatModerator()) return showModerationToast('Organizer access is required.', 'error');
+            if (!window.confirm(`Initialize ${item.name} at RM ${item.startingPrice}? It will remain closed until you enable bidding.`)) return;
             let configSnapshot;
             let standeeSnapshot;
             try {
                 [configSnapshot, standeeSnapshot] = await Promise.all([
-                    database.ref('biddingConfig/hamin').once('value'),
-                    database.ref('standees/hamin').once('value')
+                    database.ref(`biddingConfig/${standeeId}`).once('value'), database.ref(`standees/${standeeId}`).once('value')
                 ]);
-            } catch (error) {
-                showModerationToast('HAMIN status could not be checked. No changes were made.', 'error');
+            } catch (_) {
+                showModerationToast(`${item.name} status could not be checked. No changes were made.`, 'error');
                 return;
             }
             if (configSnapshot.exists() || standeeSnapshot.exists()) {
-                await refreshHaminBiddingState().catch(() => {});
-                showModerationToast('HAMIN bidding is already initialized or needs review. No data was changed.', 'error');
+                await refreshHaminBiddingState(standeeId).catch(() => {});
+                showModerationToast(`${item.name} is already initialized or needs review. No data was changed.`, 'error');
                 return;
             }
             const pristineStandee = {
-                privacyReady: true, id: 'hamin', name: 'HAMIN', img: HAMIN_STANDEE.image,
-                startingPrice: 50, currentPrice: 50, bidder: 'None', latestBidId: ''
+                privacyReady: true, id: standeeId, name: item.name, img: item.img,
+                startingPrice: item.startingPrice, currentPrice: item.startingPrice, bidder: 'None', latestBidId: ''
             };
-            haminBiddingWritePending = true;
+            biddingWritePendingIds.add(standeeId);
             renderHaminPreview();
             try {
                 await database.ref().update({
-                    'standees/hamin': pristineStandee,
-                    'biddingConfig/hamin': { status: 'READY', deadlineAt: TARGET_TIME }
+                    [`standees/${standeeId}`]: pristineStandee,
+                    [`biddingConfig/${standeeId}`]: { status: 'READY', deadlineAt: TARGET_TIME }
                 });
-                haminBiddingWritePending = false;
-                await refreshHaminBiddingState();
-                showModerationToast('HAMIN bidding initialized and remains closed.', 'success');
-            } catch (error) {
-                haminBiddingWritePending = false;
-                await refreshHaminBiddingState().catch(() => {});
-                showModerationToast('HAMIN could not be initialized. Existing data was not overwritten.', 'error');
+                showModerationToast(`${item.name} initialized and remains closed.`, 'success');
+            } catch (_) {
+                showModerationToast(`${item.name} could not be initialized. Existing data was not overwritten.`, 'error');
+            } finally {
+                biddingWritePendingIds.delete(standeeId);
+                await refreshHaminBiddingState(standeeId).catch(() => {});
             }
         }
 
-        async function setHaminBiddingStatus(nextStatus, confirmAction) {
-            if (!isChatModerator()) return showModerationToast('Organizer access is required.', 'error');
-            const actionName = nextStatus === 'OPEN'
-                ? (biddingConfigCache.hamin?.status === 'PAUSED' ? 'resume' : 'enable')
-                : 'pause';
-            if (confirmAction && !window.confirm(`Confirm ${actionName} HAMIN bidding?`)) return;
-            const button = document.querySelector('.organizer-bidding-controls button');
-            if (button) { button.disabled = true; button.textContent = 'Updating…'; }
-            haminBiddingWritePending = true;
-            const statusLabel = document.querySelector('.organizer-bidding-controls .meta-label');
-            if (statusLabel) statusLabel.textContent = `ORGANIZER · SERVER STATUS: UPDATING · ${lastConfirmedBiddingStatus}`;
+        async function setHaminStandeeStatus(standeeId, nextStatus, confirmAction) {
+            const item = HAMIN_ITEM_BY_ID[standeeId];
+            if (!item || !isChatModerator()) return showModerationToast('Organizer access is required.', 'error');
+            const currentStatus = serverBiddingStatus(standeeId);
+            const actionName = nextStatus === 'OPEN' ? (currentStatus === 'PAUSED' ? 'resume' : 'enable') : 'pause';
+            if (confirmAction && !window.confirm(`Confirm ${actionName} bidding for ${item.name}?`)) return;
+            biddingWritePendingIds.add(standeeId);
+            renderHaminPreview();
             try {
-                const statusRef = database.ref('biddingConfig/hamin');
+                const statusRef = database.ref(`biddingConfig/${standeeId}`);
                 const confirmedConfig = await statusRef.once('value');
                 if (!confirmedConfig.exists()) throw new Error('bidding-config-missing');
                 const result = await statusRef.transaction(current => {
-                    // Realtime Database may first invoke a transaction with an empty local cache.
-                    // Use the just-confirmed snapshot for that initial proposal; server conflicts
-                    // re-run this callback with the authoritative current value before commit.
                     const config = current || confirmedConfig.val();
                     if (!config || Number(config.deadlineAt) !== TARGET_TIME) return;
                     const allowed = (config.status === 'READY' && nextStatus === 'OPEN') ||
@@ -1401,57 +1378,45 @@ function showToast(message, type = 'info') {
                     if (!allowed || (nextStatus === 'OPEN' && Date.now() >= TARGET_TIME)) return;
                     return { ...config, status: nextStatus };
                 }, undefined, false);
-                haminBiddingWritePending = false;
-                await refreshHaminBiddingState();
-                if (!result.committed) {
-                    showModerationToast('Bidding status was not changed. Refresh and check the confirmed status.', 'error');
-                    return;
-                }
-                showModerationToast(`HAMIN bidding ${nextStatus === 'OPEN' ? 'opened' : 'paused'}.`, 'success');
-            } catch (error) {
-                haminBiddingWritePending = false;
-                await refreshHaminBiddingState().catch(() => {});
-                showModerationToast('Bidding status could not be changed. Check organizer access and try again.', 'error');
+                await refreshHaminBiddingState(standeeId);
+                if (!result.committed) showModerationToast(`${item.name} status was not changed. Check the confirmed status.`, 'error');
+                else showModerationToast(`${item.name} bidding ${nextStatus === 'OPEN' ? 'opened' : 'paused'}.`, 'success');
+            } catch (_) {
+                await refreshHaminBiddingState(standeeId).catch(() => {});
+                showModerationToast(`${item.name} bidding status could not be changed. Check organizer access and try again.`, 'error');
+            } finally {
+                biddingWritePendingIds.delete(standeeId);
+                renderHaminPreview();
             }
         }
 
-        if (STATIC_CURRENT_STANDEES.length === 0) {
-            globalDataCache = {};
-            document.getElementById('current-bids-count').textContent = 'HAMIN · COMING SOON';
-            renderHaminPreview();
-            database.ref(`biddingConfig/${HAMIN_STANDEE.slug}`).on('value', snapshot => {
-                const config = snapshot.val() || {};
-                biddingConfigCache[HAMIN_STANDEE.slug] = config;
-                activeDeadlineAt = Number(config.deadlineAt) || TARGET_TIME;
+        // Keep the original HAMIN organizer entry points available for local tooling.
+        function initializeHaminBidding() { return initializeHaminStandee('hamin'); }
+        function setHaminBiddingStatus(nextStatus, confirmAction) { return setHaminStandeeStatus('hamin', nextStatus, confirmAction); }
+
+        renderHaminPreview();
+        STATIC_CURRENT_STANDEES.forEach(displayItem => {
+            const standeeId = displayItem.slug;
+            database.ref(`standees/${standeeId}`).on('value', snapshot => {
+                liveRemoteData[standeeId] = snapshot.val();
+                loadedLiveStandeeIds.add(standeeId);
+                if (loadedLiveStandeeIds.size === STATIC_CURRENT_STANDEES.length && loadedLiveConfigIds.size === STATIC_CURRENT_STANDEES.length) applyLiveStandeeData(liveRemoteData, liveRemoteConfig);
+            }, () => showToast(`${displayItem.name} data could not be loaded. Please refresh and try again.`, 'error'));
+            database.ref(`biddingConfig/${standeeId}`).on('value', snapshot => {
+                liveRemoteConfig[standeeId] = snapshot.val() || {};
+                biddingConfigCache[standeeId] = liveRemoteConfig[standeeId];
+                confirmedBiddingStatuses[standeeId] = serverBiddingStatus(standeeId);
+                loadedLiveConfigIds.add(standeeId);
+                activeDeadlineAt = TARGET_TIME;
                 updateTimer();
                 renderHaminChat();
+                if (loadedLiveStandeeIds.size === STATIC_CURRENT_STANDEES.length && loadedLiveConfigIds.size === STATIC_CURRENT_STANDEES.length) applyLiveStandeeData(liveRemoteData, liveRemoteConfig);
+            }, () => {
+                loadedLiveConfigIds.add(standeeId);
+                renderHaminPreview();
+                showToast(`${displayItem.name} bidding status could not be verified. Bidding remains unavailable.`, 'error');
             });
-        } else {
-            STATIC_CURRENT_STANDEES.forEach(displayItem => {
-                database.ref('standees/' + displayItem.slug).on('value', snapshot => {
-                    liveRemoteData[displayItem.slug] = snapshot.val();
-                    haminStandeeSnapshotReady = true;
-                    loadedLiveStandeeIds.add(displayItem.slug);
-                    if (loadedLiveStandeeIds.size === STATIC_CURRENT_STANDEES.length && loadedLiveConfigIds.size === STATIC_CURRENT_STANDEES.length) applyLiveStandeeData(liveRemoteData, liveRemoteConfig);
-                }, () => {
-                    document.getElementById('standee-container').innerHTML =
-                        '<div class="text-center col-span-full py-10" style="color: var(--text-muted);">Unable to load live bids. Please refresh and try again.</div>';
-                    showToast("Live bidding data could not be loaded. Please refresh and try again.", "error");
-                });
-                database.ref(`biddingConfig/${displayItem.slug}`).on('value', snapshot => {
-                    liveRemoteConfig[displayItem.slug] = snapshot.val() || {};
-                    biddingConfigSnapshotReady = true;
-                    loadedLiveConfigIds.add(displayItem.slug);
-                    if (Number(liveRemoteConfig[displayItem.slug].deadlineAt)) activeDeadlineAt = Number(liveRemoteConfig[displayItem.slug].deadlineAt);
-                    updateTimer();
-                    renderHaminChat();
-                    if (loadedLiveStandeeIds.size === STATIC_CURRENT_STANDEES.length && loadedLiveConfigIds.size === STATIC_CURRENT_STANDEES.length) applyLiveStandeeData(liveRemoteData, liveRemoteConfig);
-                }, () => {
-                    renderHaminPreview();
-                    showToast("Bidding status could not be verified. Bidding remains unavailable.", "error");
-                });
-            });
-        }
+        });
 
 
 
@@ -1810,7 +1775,7 @@ function showToast(message, type = 'info') {
             if (difference <= 0) {
                 isEnded = true;
                 renderHaminChat();
-                if (!['OPEN', 'PAUSED'].includes(biddingConfigCache.hamin?.status)) {
+                if (!STATIC_CURRENT_STANDEES.some(item => ['OPEN', 'PAUSED'].includes(biddingConfigCache[item.slug]?.status))) {
                     document.getElementById('countdown-clock').innerHTML = "BIDDING DEADLINE REACHED";
                     document.getElementById('timer-label').innerHTML = '📢 Status <span style="color: var(--text-muted); letter-spacing: normal; text-transform: none;">(Malaysia Time, GMT+8)</span>';
                     document.getElementById('page-subtitle').innerText = "The bidding window has closed. Event details will be announced separately.";
@@ -1843,7 +1808,7 @@ function showToast(message, type = 'info') {
 
             if (difference <= (30 * 60 * 1000) && !closingSoonApplied) {
                 closingSoonApplied = true;
-                document.getElementById('timer-label').innerHTML = biddingConfigCache.hamin?.status === 'OPEN'
+                document.getElementById('timer-label').innerHTML = STATIC_CURRENT_STANDEES.some(item => biddingConfigCache[item.slug]?.status === 'OPEN')
                     ? 'Closing Soon <span style="color: var(--text-muted); letter-spacing: normal; text-transform: none;">(Malaysia Time, GMT+8)</span>'
                     : 'Starting Soon <span style="color: var(--text-muted); letter-spacing: normal; text-transform: none;">(Malaysia Time, GMT+8)</span>';
                 if (globalDataCache) renderStandees(globalDataCache);
@@ -1914,9 +1879,13 @@ function renderStandees(data) {
 
 
 
-            Object.keys(data).forEach((key, itemIndex) => {
-                const item = data[key];
-                item.id = item.id || key;
+            STATIC_CURRENT_STANDEES.forEach((displayItem, itemIndex) => {
+                const item = data[displayItem.slug];
+                if (!item) {
+                    html += renderStandeePreview(displayItem, itemIndex);
+                    return;
+                }
+                item.id = item.id || displayItem.slug;
                 const biddingStatus = biddingConfigCache[item.id]?.status;
                 const biddingIsOpen = biddingStatus === 'OPEN' && Date.now() < (Number(biddingConfigCache[item.id]?.deadlineAt) || TARGET_TIME);
                 const biddingIsPaused = biddingStatus === 'PAUSED';
@@ -1950,7 +1919,7 @@ function renderStandees(data) {
 
                 const myRecord = myBids[item.id];
                 const iAmLeading = Boolean(localUser && myRecord && Number(myRecord.amount) === Number(item.currentPrice));
-                const nextBid = isInitialState ? Number(item.currentPrice) : Number(item.currentPrice) + 5;
+                const nextBid = isInitialState ? Number(item.startingPrice) : Number(item.currentPrice) + Number(item.minimumIncrement || 5);
                 const itemDeadline = Number(item.deadlineAt) || activeDeadlineAt;
                 const isClosingSoon = !isEnded && (itemDeadline - Date.now()) <= (30 * 60 * 1000);
 
@@ -2002,12 +1971,12 @@ function renderStandees(data) {
                         </button>
                     `;
                 } else if (localUser) {
-                    const step = Number(item.currentPrice) + 5;
+                    const step = isInitialState ? Number(item.startingPrice) : Number(item.currentPrice) + Number(item.minimumIncrement || 5);
                     bidActionHtml = `
                         <div class="flex gap-2 mb-2">
                             <button type="button" class="quick-btn" onclick="setBidValue('${item.id}', ${step})">+RM5</button>
-                            <button type="button" class="quick-btn" onclick="setBidValue('${item.id}', ${item.currentPrice + 10})">+RM10</button>
-                            <button type="button" class="quick-btn" onclick="setBidValue('${item.id}', ${item.currentPrice + 20})">+RM20</button>
+                            <button type="button" class="quick-btn" onclick="setBidValue('${item.id}', ${step + 5})">+RM${Number(item.minimumIncrement || 5) * 2}</button>
+                            <button type="button" class="quick-btn" onclick="setBidValue('${item.id}', ${step + 15})">+RM${Number(item.minimumIncrement || 5) * 4}</button>
                         </div>
                         <div class="flex gap-2">
                             <input type="number" id="bid-${item.id}" min="${isInitialState ? item.currentPrice : step}" step="5" inputmode="numeric" aria-label="Bid amount for ${escapeHtml(item.name)} in Malaysian ringgit" placeholder="RM ${step}+" class="input-dark w-full px-3 py-2 rounded-lg text-sm">
@@ -2051,7 +2020,7 @@ function renderStandees(data) {
 
 
                 const card = `
-                    <article class="standee-card ${priceChanged ? 'card-flash' : ''}">
+                    <article class="standee-card ${priceChanged ? 'card-flash' : ''}" data-standee-id="${escapeHtml(item.id)}">
                         <div class="item-topline">
                             <span class="item-number">${String(itemIndex + 1).padStart(2, '0')}</span>
                             <span class="item-status">${statusPillHtml}</span>
@@ -2079,7 +2048,7 @@ function renderStandees(data) {
                             <div id="history-panel-${item.id}" class="history-panel ${isHistoryOpen ? 'open' : ''}">
                                 ${historyHtml}
                             </div>
-                            ${renderHaminBiddingAdmin()}
+                            ${isChatModerator() ? `<section class="organizer-bidding-controls" aria-label="Organizer bidding controls for ${escapeHtml(item.name)}" style="border-top:1px solid var(--border-subtle); margin-top:1.25rem; padding-top:1rem;"><p class="meta-label">ORGANIZER · SERVER STATUS: ${escapeHtml(biddingWritePendingIds.has(item.id) ? `UPDATING · ${confirmedBiddingStatuses[item.id] || biddingStatus}` : serverBiddingStatus(item.id))}</p><div style="margin-top:.65rem">${renderStandeeAdminAction(displayItem, serverBiddingStatus(item.id), biddingWritePendingIds.has(item.id))}</div></section>` : ''}
                         </div>
                     </article>
                 `;
@@ -2089,6 +2058,7 @@ function renderStandees(data) {
 
 
 
+            container.classList.remove('preview-grid');
             container.innerHTML = html || '<div class="text-center col-span-full py-10" style="color: var(--text-muted);">No standees available.</div>';
         }
 
@@ -2116,8 +2086,8 @@ function renderStandees(data) {
 
         // ---------- Bidding flow: validate -> confirm modal -> transaction ----------
         function initiateBid(id, currentPrice, itemName) {
-            if (id === HAMIN_STANDEE.slug && biddingConfigCache.hamin?.status !== 'OPEN') {
-                showToast("HAMIN bidding has not opened yet.", 'info');
+            if (!HAMIN_ITEM_BY_ID[id] || !isStandeeOpen(id)) {
+                showToast("Bidding for this standee is not open.", 'info');
                 return;
             }
             const deadlineAt = Number(biddingConfigCache[id]?.deadlineAt) || activeDeadlineAt;
@@ -2200,10 +2170,10 @@ function renderStandees(data) {
         async function executeBid() {
             if (!pendingBid) return;
             const { id, amount, itemName } = pendingBid;
-            if (id === HAMIN_STANDEE.slug && biddingConfigCache.hamin?.status !== 'OPEN') {
+            if (!HAMIN_ITEM_BY_ID[id] || !isStandeeOpen(id)) {
                 pendingBid = null;
                 toggleConfirmModal(false);
-                showToast("HAMIN bidding has not opened yet.", 'info');
+                showToast("Bidding for this standee is not open.", 'info');
                 return;
             }
             const deadlineAt = Number(biddingConfigCache[id]?.deadlineAt) || activeDeadlineAt;
@@ -2539,10 +2509,14 @@ function renderStandees(data) {
 
             list.innerHTML = ids.map(id => {
                 const rec = store[id];
-                const item = globalDataCache ? globalDataCache[id] : null;
+                const item = liveRemoteData[id] || globalDataCache?.[id] || null;
+                const descriptor = HAMIN_ITEM_BY_ID[id];
                 let statusHtml;
-                if (!item) {
+                if (!descriptor) {
                     statusHtml = `<span style="color: var(--text-muted);">Item no longer listed</span>`;
+                } else if (!item || !isStandeeOpen(id)) {
+                    const status = serverBiddingStatus(id);
+                    statusHtml = `<span style="color: var(--text-muted);">${status === 'PAUSED' ? 'Paused — your bid is retained' : status === 'READY' ? 'Not opened yet' : status === 'ENDED' ? 'Ended' : 'Bid status unavailable'}</span>`;
                 } else {
                     const iAmLeading = Boolean(localUser && Number(rec.amount) === Number(item.currentPrice));
                     if (isEnded) {
@@ -2558,7 +2532,7 @@ function renderStandees(data) {
                 return `
                     <div class="p-3 rounded-xl flex justify-between items-center" style="background: var(--bg-void-2); border: 1px solid var(--border-subtle);">
                         <div>
-                            <p class="text-sm font-bold" style="color: var(--text-primary);">${escapeHtml(rec.itemName)}</p>
+                            <p class="text-sm font-bold" style="color: var(--text-primary);">${escapeHtml(descriptor?.name || rec.itemName)}</p>
                             <p class="text-xs" style="color: var(--text-muted);">Your last bid: RM ${escapeHtml(rec.amount)}</p>
                         </div>
                         <div class="text-xs font-semibold text-right">${statusHtml}</div>
