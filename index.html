@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -435,12 +435,13 @@
         .ended-message strong { display: block; font-size: 14px; letter-spacing: .04em; }
         .ended-message span { display: block; margin-top: 5px; color: #777A84; font-size: 12px; }
         #standee-container.preview-grid { grid-template-columns: minmax(0, 640px); }
-        .coming-soon-card { width: 100%; }
-        .coming-soon-visual { height: min(29vw, 330px); min-height: 250px; position: relative; display: grid; place-items: center; overflow: hidden; background: #FFFFFF; border-bottom: 1px solid #CACCD3; }
+        .coming-soon-card { width: 100%; container-type: inline-size; }
+        .coming-soon-card .item-name { max-width: 100%; overflow-wrap: anywhere; font-size: clamp(18px, 8cqw, 34px); line-height: 1; }
+        .coming-soon-visual { height: min(29vw, 330px); min-height: 250px; position: relative; display: grid; place-items: center; overflow: hidden; container-type: inline-size; background: #FFFFFF; border-bottom: 1px solid #CACCD3; }
         .coming-soon-visual::before { content: ""; position: absolute; width: 54%; aspect-ratio: 1; border: 1px solid #CACCD3; border-radius: 50%; opacity: .8; }
         .coming-soon-visual::after { content: ""; position: absolute; width: 72%; height: 1px; background: #D9DAE0; transform: rotate(-29deg); }
         .coming-soon-visual-copy { position: relative; z-index: 1; text-align: center; }
-        .coming-soon-visual-name { display: block; font-size: clamp(44px, 7vw, 80px); line-height: .84; letter-spacing: -.09em; font-weight: 800; }
+        .coming-soon-visual-name { display: block; max-width: 92%; margin-inline: auto; overflow-wrap: anywhere; font-size: clamp(20px, 9cqw, 38px); line-height: .94; letter-spacing: -.07em; font-weight: 800; }
         .coming-soon-visual-note { display: block; margin-top: 15px; font: 700 10px/1 'Space Mono', monospace; letter-spacing: .14em; color: #777A84; text-transform: uppercase; }
         .coming-soon-event { margin-top: 10px; color: #676A74; font-size: 14px; line-height: 1.5; }
         .coming-soon-notice { border-top: 1px solid #CACCD3; margin-top: 24px; padding-top: 16px; font-size: 13px; line-height: 1.55; color: #676A74; }
@@ -1209,7 +1210,13 @@ function showToast(message, type = 'info') {
                 const remoteItem = remoteData[displayItem.slug];
                 const config = remoteConfig[displayItem.slug];
                 const authoritativePrice = remoteItem && Number(remoteItem.currentPrice);
-                if (!remoteItem || !config || config.status !== 'OPEN' || Number(config.deadlineAt) !== TARGET_TIME || Date.now() >= TARGET_TIME || !Number.isFinite(authoritativePrice) || authoritativePrice <= 0) return;
+                const displayStatus = serverBiddingStatus(displayItem.slug);
+                // The image is a reveal: show it only after this item has opened,
+                // or when the fixed deadline has ended an initialized item.
+                // PAUSED is reachable only from OPEN under the database Rules,
+                // so the state survives refreshes without adding a DB field.
+                const mayRevealArtwork = ['OPEN', 'PAUSED', 'ENDED'].includes(displayStatus);
+                if (!remoteItem || !config || !mayRevealArtwork || Number(config.deadlineAt) !== TARGET_TIME || !Number.isFinite(authoritativePrice) || authoritativePrice <= 0) return;
 
 
 
@@ -1230,10 +1237,11 @@ function showToast(message, type = 'info') {
 
 
 
-            const availableCount = Object.keys(globalDataCache).length;
+            const availableCount = STATIC_CURRENT_STANDEES.filter(item => serverBiddingStatus(item.slug) === 'OPEN').length;
+            const anyArtworkRevealed = Object.keys(globalDataCache).length > 0;
             document.getElementById('current-bids-count').textContent = availableCount
                 ? `${availableCount.toString().padStart(2, '0')} ${availableCount === 1 ? 'standee' : 'standees'} currently available`
-                : '04 HAMIN STANDEES · COMING SOON';
+                : anyArtworkRevealed ? '04 HAMIN STANDEES · BIDDING CLOSED' : '04 HAMIN STANDEES · COMING SOON';
 
 
 
@@ -1264,12 +1272,9 @@ function showToast(message, type = 'info') {
         function renderStandeePreview(displayItem, itemIndex) {
             const name = displayItem.name;
             const image = displayItem.img;
-            const previewLabel = `${name} image placeholder`;
             const status = serverBiddingStatus(displayItem.slug);
             const isPending = biddingWritePendingIds.has(displayItem.slug);
             const statusText = isPending ? `UPDATING · ${confirmedBiddingStatuses[displayItem.slug] || status}` : status;
-            const safeImage = escapeHtml(image).replace(/'/g, "\\'");
-            const safeName = escapeHtml(name).replace(/'/g, "\\'");
             const organizer = isChatModerator() ? `
                 <section class="organizer-bidding-controls" aria-label="Organizer bidding controls for ${escapeHtml(name)}" style="border-top:1px solid var(--border-subtle); margin-top:1.25rem; padding-top:1rem;">
                     <p class="meta-label">ORGANIZER · SERVER STATUS: ${escapeHtml(statusText)}</p>
@@ -1277,8 +1282,7 @@ function showToast(message, type = 'info') {
                 </section>` : '';
             return `<article class="standee-card coming-soon-card" data-standee-id="${escapeHtml(displayItem.slug)}">
                 <div class="item-topline"><span class="item-number">${String(itemIndex + 1).padStart(2, '0')}</span><span class="item-status">${status === 'PAUSED' ? 'PAUSED' : status === 'READY' ? 'READY' : 'COMING SOON'}</span></div>
-                <div class="card-image-wrap"><button type="button" class="standee-image-trigger" aria-label="View full image of ${escapeHtml(name)}" onclick="openImagePreview('${safeImage}', '${safeName}')"><img class="standee-image" src="${safeImage}" alt="${previewLabel}" loading="lazy"></button></div>
-                <button type="button" class="image-preview-hint" onclick="openImagePreview('${safeImage}', '${safeName}')">View full image ↗</button>
+                <div class="coming-soon-visual" role="img" aria-label="${escapeHtml(name)} standee image coming soon"><div class="coming-soon-visual-copy"><strong class="coming-soon-visual-name">${escapeHtml(name)}</strong><span class="coming-soon-visual-note">Standee reveal soon ♡</span></div></div>
                 <div class="item-copy"><h2 class="item-name font-display font-black" style="color: var(--text-primary);">${escapeHtml(name)}</h2>
                     <p class="coming-soon-event">${escapeHtml(displayItem.eventName)}</p>
                     <p class="coming-soon-notice">The standee image and bidding details will be revealed soon. No bids are open at this time.</p>${organizer}</div>
@@ -1866,7 +1870,11 @@ function showToast(message, type = 'info') {
                 </div>
             `).join('');
         }
-        renderSkeleton();
+        // Keep the four neutral cards visible while Firebase is loading or
+        // confirming that an item has not been initialized. The skeleton used
+        // to replace these cards and could leave the section looking empty
+        // whenever one of the live listeners was slow or unavailable.
+        renderHaminPreview();
         checkLocalLogin();
 
 
@@ -1886,9 +1894,10 @@ function renderStandees(data) {
                     return;
                 }
                 item.id = item.id || displayItem.slug;
-                const biddingStatus = biddingConfigCache[item.id]?.status;
-                const biddingIsOpen = biddingStatus === 'OPEN' && Date.now() < (Number(biddingConfigCache[item.id]?.deadlineAt) || TARGET_TIME);
+                const biddingStatus = serverBiddingStatus(item.id);
+                const biddingIsOpen = biddingStatus === 'OPEN' && biddingConfigCache[item.id]?.status === 'OPEN';
                 const biddingIsPaused = biddingStatus === 'PAUSED';
+                const itemEnded = biddingStatus === 'ENDED';
 
 
 
@@ -1911,7 +1920,7 @@ function renderStandees(data) {
                     ? (latestHistoryEntry.bidderInitials || nicknameInitials(item.bidder))
                     : item.bidder;
                 if (!currentLeader || currentLeader === "None") {
-                    currentLeader = isEnded ? "No Winner" : "None";
+                    currentLeader = itemEnded ? "No Winner" : "None";
                 }
 
 
@@ -1921,13 +1930,13 @@ function renderStandees(data) {
                 const iAmLeading = Boolean(localUser && myRecord && Number(myRecord.amount) === Number(item.currentPrice));
                 const nextBid = isInitialState ? Number(item.startingPrice) : Number(item.currentPrice) + Number(item.minimumIncrement || 5);
                 const itemDeadline = Number(item.deadlineAt) || activeDeadlineAt;
-                const isClosingSoon = !isEnded && (itemDeadline - Date.now()) <= (30 * 60 * 1000);
+                const isClosingSoon = !itemEnded && (itemDeadline - Date.now()) <= (30 * 60 * 1000);
 
 
 
 
                 let outbidBanner = '';
-                if (!isEnded && myRecord && !iAmLeading && item.currentPrice > myRecord.amount) {
+                if (!itemEnded && myRecord && !iAmLeading && item.currentPrice > myRecord.amount) {
                     outbidBanner = `<div class="outbid-banner mb-3">⚠️ You've been outbid! You bid RM ${escapeHtml(myRecord.amount)}, current highest is RM ${escapeHtml(item.currentPrice)}.</div>`;
                 }
 
@@ -1935,7 +1944,7 @@ function renderStandees(data) {
 
 
                 let statusPillHtml;
-                if (isEnded) {
+                if (itemEnded) {
                     statusPillHtml = `<span class="status-pill status-pill--ended">Ended</span>`;
                 } else if (biddingIsPaused) {
                     statusPillHtml = `<span class="status-pill status-pill--none">Paused</span>`;
@@ -1949,15 +1958,17 @@ function renderStandees(data) {
 
 
                 let bidActionHtml = '';
-                if (isEnded) {
+                if (itemEnded) {
                     bidActionHtml = `
                         <div class="ended-message">
                             <strong>BIDDING ENDED</strong>
                             <span>Winner confirmation in progress.</span>
                         </div>
                     `;
-                } else if (!biddingIsOpen) {
+                } else if (biddingIsPaused) {
                     bidActionHtml = `<p class="text-sm" style="color:var(--text-muted)">Bidding is paused. Current bid information is preserved.</p>`;
+                } else if (!biddingIsOpen) {
+                    bidActionHtml = `<p class="text-sm" style="color:var(--text-muted)">Bidding is unavailable. Current bid information is preserved.</p>`;
                 } else if (!registrationReady) {
                     bidActionHtml = `
                         <button disabled class="w-full font-bold py-2 rounded-lg text-sm" style="background: var(--bg-surface-3); color: var(--text-muted);">
@@ -2010,7 +2021,7 @@ function renderStandees(data) {
                 const standeeImageHtml = item.img
                     ? `
                         <div class="card-image-wrap">
-                            <button type="button" class="standee-image-trigger" aria-label="View full image of ${escapeHtml(item.name)}" onclick="openImagePreview('${escapeHtml(item.img).replace(/'/g, "\\'")}', '${escapeHtml(item.name).replace(/'/g, "\\'")}')"><img class="standee-image" src="${escapeHtml(item.img)}" alt="" loading="lazy" style="${isEnded ? 'filter: grayscale(20%) brightness(0.85);' : ''}"></button>
+                            <button type="button" class="standee-image-trigger" aria-label="View full image of ${escapeHtml(item.name)}" onclick="openImagePreview('${escapeHtml(item.img).replace(/'/g, "\\'")}', '${escapeHtml(item.name).replace(/'/g, "\\'")}')"><img class="standee-image" src="${escapeHtml(item.img)}" alt="" loading="lazy" style="${itemEnded ? 'filter: grayscale(20%) brightness(0.85);' : ''}"></button>
                         </div>
                         <button type="button" class="image-preview-hint" onclick="openImagePreview('${escapeHtml(item.img).replace(/'/g, "\\'")}', '${escapeHtml(item.name).replace(/'/g, "\\'")}')">View full image ↗</button>
                     `
@@ -2033,12 +2044,12 @@ function renderStandees(data) {
                             ${outbidBanner}
                             <div class="item-bid-grid">
                                 <div>
-                                    <span class="meta-label">${isEnded ? 'Final Price' : 'Current Bid'}</span>
+                                    <span class="meta-label">${itemEnded ? 'Final Price' : 'Current Bid'}</span>
                                     <p class="current-price font-mono-num ${priceChanged ? 'price-flash' : ''}">RM ${escapeHtml(item.currentPrice)}</p>
                                 </div>
                                 <div>
-                                    <span class="meta-label">${isEnded ? 'Closing Status' : biddingIsPaused ? 'Bidding Status' : 'Next Bid From'}</span>
-                                    <p class="leader-name">${isEnded ? 'Confirmation in progress' : biddingIsPaused ? 'Paused' : `RM ${escapeHtml(nextBid)}`}</p>
+                                    <span class="meta-label">${itemEnded ? 'Closing Status' : biddingIsPaused ? 'Bidding Status' : 'Next Bid From'}</span>
+                                    <p class="leader-name">${itemEnded ? 'Confirmation in progress' : biddingIsPaused ? 'Paused' : `RM ${escapeHtml(nextBid)}`}</p>
                                 </div>
                             </div>
                             <div class="bid-actions">${bidActionHtml}</div>
